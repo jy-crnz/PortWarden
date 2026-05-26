@@ -36,8 +36,12 @@ function DashboardContent() {
       setLoading(true);
       try {
         // Pass currentPage to Django backend
-        const res = await fetch(`http://127.0.0.1:8000/api/v1/devices/?page=${currentPage}`, {
-          cache: 'no-store',
+        // 1. Define the base URL using the environment variable, falling back to local
+        const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
+
+        // 2. Use that variable in the fetch call
+        const res = await fetch(`${API_BASE_URL}/api/v1/devices/?page=${currentPage}`, {
+            cache: 'no-store',
         });
 
         // NEW: Gracefully handle out-of-bounds pages (like ?page=99 on an empty DB)

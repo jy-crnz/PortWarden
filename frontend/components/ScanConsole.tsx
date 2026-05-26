@@ -33,7 +33,8 @@ export default function ScanConsole({ onScanComplete }: ScanConsoleProps) {
         const estimatedTime = scanType === 'quick' ? 20 : 180;
         setTimeLeft(estimatedTime);
 
-        const eventSource = new EventSource(`http://127.0.0.1:8000/api/v1/stream/?type=${scanType}`);
+        const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
+        const eventSource = new EventSource(`${API_BASE_URL}/api/v1/stream/?type=${scanType}`);
 
         eventSource.onmessage = (event) => {
             const message = event.data;
