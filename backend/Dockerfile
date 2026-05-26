@@ -1,5 +1,5 @@
 # 1. Use an official, lightweight Python image
-FROM python:3.11-slim
+FROM python:3.12-slim
 
 # 2. Set environment variables to optimize Python for Docker
 ENV PYTHONDONTWRITEBYTECODE=1
