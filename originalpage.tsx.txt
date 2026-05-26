@@ -1,0 +1,176 @@
+import { PaginatedResponse, Device } from '../types/api';
+import ScanConsole from '../components/ScanConsole';
+import TopologyMap from '../components/TopologyMap';
+import ExportReport from '../components/ExportReport'; // <-- Added ExportReport import
+import { ShieldAlert, ShieldX, ShieldCheck, Server, Clock, Activity } from 'lucide-react';
+
+export default async function NetworkDashboard() {
+  const res = await fetch('http://127.0.0.1:8000/api/v1/devices/', {
+    cache: 'no-store',
+  });
+
+  if (!res.ok) {
+    return (
+      <div className="flex h-screen items-center justify-center p-5">
+        <p className="text-danger border border-danger p-4 rounded-md font-bold flex items-center gap-2">
+          <ShieldX className="w-6 h-6" /> CRITICAL ERROR: Failed to fetch network data. Is the Django backend running?
+        </p>
+      </div>
+    );
+  }
+
+  const data: PaginatedResponse<Device> = await res.json();
+  const devices = data.results;
+
+  const stats = {
+    high: devices.filter(d => d.risk_level === 'HIGH').length,
+    moderate: devices.filter(d => d.risk_level === 'MODERATE').length,
+    low: devices.filter(d => d.risk_level === 'LOW').length,
+  };
+
+  return (
+    <main className="max-w-7xl mx-auto p-5 md:p-8">
+      {/* Header Section */}
+      <header className="mb-8 border-b border-border pb-4 flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-primary tracking-tight flex items-center gap-3">
+            <Activity className="w-8 h-8" /> PortWarden
+          </h1>
+          <p className="text-textMuted mt-1 italic">Real-time Network Audit & Vulnerability Matrix</p>
+        </div>
+
+        {/* UPDATED: Container for Stats and Export Button */}
+        <div className="flex flex-col items-end gap-3">
+          <div className="text-sm text-textMuted flex items-center gap-2">
+            V1.2.0 <span className="opacity-20">|</span> Total Nodes: <span className="text-textMain font-bold">{data.count}</span>
+          </div>
+          {/* NEW FEATURE: Export Dropdown */}
+          <ExportReport devices={devices} stats={stats} />
+        </div>
+      </header>
+
+      <ScanConsole />
+      <TopologyMap devices={devices} />
+
+      {/* Network Health Summary Cards */}
+      {devices.length > 0 && (
+        <section className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+          <div className="bg-surface border border-border p-4 rounded-xl shadow-sm relative overflow-hidden">
+            <ShieldX className="w-16 h-16 absolute -bottom-4 -right-4 text-danger/10" />
+            <p className="text-xs text-textMuted uppercase font-bold tracking-widest mb-1 flex items-center gap-1.5">
+              <ShieldX className="w-3.5 h-3.5 text-danger" /> Critical Risks
+            </p>
+            <p className="text-2xl font-black text-danger">{stats.high} <span className="text-sm font-normal text-textMuted text-opacity-50">Devices</span></p>
+          </div>
+          <div className="bg-surface border border-border p-4 rounded-xl shadow-sm relative overflow-hidden">
+            <ShieldAlert className="w-16 h-16 absolute -bottom-4 -right-4 text-warning/10" />
+            <p className="text-xs text-textMuted uppercase font-bold tracking-widest mb-1 flex items-center gap-1.5">
+              <ShieldAlert className="w-3.5 h-3.5 text-warning" /> Moderate Warnings
+            </p>
+            <p className="text-2xl font-black text-warning">{stats.moderate} <span className="text-sm font-normal text-textMuted text-opacity-50">Devices</span></p>
+          </div>
+          <div className="bg-surface border border-border p-4 rounded-xl shadow-sm relative overflow-hidden">
+            <ShieldCheck className="w-16 h-16 absolute -bottom-4 -right-4 text-primary/10" />
+            <p className="text-xs text-textMuted uppercase font-bold tracking-widest mb-1 flex items-center gap-1.5">
+              <ShieldCheck className="w-3.5 h-3.5 text-primary" /> Secure Nodes
+            </p>
+            <p className="text-2xl font-black text-primary">{stats.low} <span className="text-sm font-normal text-textMuted text-opacity-50">Devices</span></p>
+          </div>
+        </section>
+      )}
+
+      {/* Empty State Handling */}
+      {devices.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-20 bg-surface border border-border rounded-xl border-dashed text-center">
+          <Activity className="w-12 h-12 text-border mb-4" />
+          <p className="text-textMuted mb-2">No network data found in the vault.</p>
+          <p className="text-sm font-bold text-primary">Use the Mission Control above to initialize your first audit.</p>
+        </div>
+      ) : (
+        /* Device Grid */
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          {devices.map((device) => (
+            <article
+              key={device.id}
+              className="bg-surface border border-border p-5 rounded-xl shadow-sm hover:border-primary transition-all duration-300 focus-within:ring-2 focus-within:ring-primary"
+            >
+              <div className="flex justify-between items-start mb-4 pb-4 border-b border-border/50">
+                <div>
+                  <div className="flex items-center gap-3">
+                    <h2 className="text-xl font-bold text-textMain tracking-tight flex items-center gap-2">
+                      <Server className="w-5 h-5 text-textMuted" />
+                      {device.ip_address}
+                    </h2>
+                    <span className={`text-[10px] px-2 py-0.5 rounded font-black tracking-widest uppercase border flex items-center gap-1
+                      ${device.risk_level === 'HIGH' ? 'bg-danger/10 text-danger border-danger/20' :
+                        device.risk_level === 'MODERATE' ? 'bg-warning/10 text-warning border-warning/20' :
+                          'bg-primary/10 text-primary border-primary/20'}`}
+                    >
+                      {device.risk_level === 'HIGH' && <ShieldX className="w-3 h-3" />}
+                      {device.risk_level === 'MODERATE' && <ShieldAlert className="w-3 h-3" />}
+                      {device.risk_level === 'LOW' && <ShieldCheck className="w-3 h-3" />}
+                      {device.risk_level} RISK
+                    </span>
+                  </div>
+                  <p className="text-sm text-textMuted font-mono mt-1 opacity-80 pl-7">
+                    {device.mac_address || '00:00:00:00:00:00'} {device.vendor && `(${device.vendor})`}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <span className="text-[10px] text-textMuted uppercase font-bold mb-0.5 flex items-center justify-end gap-1">
+                    <Clock className="w-3 h-3" /> Last Seen
+                  </span>
+                  <span className="text-sm font-semibold">{new Date(device.last_seen).toLocaleTimeString()}</span>
+                </div>
+              </div>
+
+              {/* Ports & Vulnerability Matrix */}
+              <div>
+                <h3 className="text-xs font-bold text-textMuted mb-3 uppercase tracking-[0.2em] flex items-center gap-2">
+                  <Activity className="w-3 h-3" /> Discovered Ports
+                </h3>
+                {device.ports.length === 0 ? (
+                  <p className="text-sm text-textMuted italic bg-background p-3 rounded-lg border border-border/30">
+                    No active listeners detected.
+                  </p>
+                ) : (
+                  <ul className="space-y-2.5">
+                    {device.ports.map((port) => (
+                      <li key={port.id} className="flex flex-col bg-background p-2.5 px-3.5 rounded-lg border border-border shadow-inner">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-4">
+                            <span className="font-mono text-primary font-black w-12 text-md leading-none">
+                              {port.port_number}
+                            </span>
+                            <span className="text-sm text-textMain font-bold uppercase tracking-tight">
+                              {port.service_name || 'unknown'}
+                            </span>
+                          </div>
+                          <span className={`text-[9px] px-2 py-0.5 rounded-md font-black uppercase tracking-tighter
+                            ${port.state === 'OPEN' ? 'bg-danger/20 text-danger' :
+                              port.state === 'FILTERED' ? 'bg-warning/20 text-warning' :
+                                'bg-border text-textMuted'}`}
+                          >
+                            {port.state}
+                          </span>
+                        </div>
+
+                        {(port.service_product || port.service_version) && (
+                          <div className="mt-1.5 ml-16 text-[11px] text-textMuted italic flex items-center gap-1.5 border-t border-border/30 pt-1.5">
+                            <span className="text-primary font-medium">{port.service_product}</span>
+                            {port.service_product && port.service_version && <span className="opacity-30">/</span>}
+                            <span>{port.service_version}</span>
+                          </div>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </article>
+          ))}
+        </div>
+      )}
+    </main>
+  );
+}

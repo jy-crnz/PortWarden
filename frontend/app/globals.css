@@ -1,0 +1,30 @@
+@import "tailwindcss";
+
+@theme {
+  /* Enforcing your strict 4px/8px layout grid */
+  --spacing-0: 0px;
+  --spacing-1: 4px;
+  --spacing-2: 8px;
+  --spacing-3: 12px;
+  --spacing-4: 16px;
+  --spacing-5: 24px;
+  --spacing-6: 32px;
+  --spacing-7: 48px;
+  --spacing-8: 64px;
+
+  /* A strict, tactical color palette */
+  --color-background: #0F172A;
+  --color-surface: #1E293B;
+  --color-border: #334155;
+  --color-primary: #38BDF8;
+  --color-danger: #EF4444;
+  --color-warning: #F59E0B;
+  --color-textMain: #F8FAFC;
+  --color-textMuted: #94A3B8;
+}
+
+/* Applying our new variables to the base body */
+body {
+  background-color: var(--color-background);
+  color: var(--color-textMain);
+}
