@@ -22,14 +22,27 @@ class Command(BaseCommand):
             default="quick",
             help="Select scan intensity: quick (port scan) or advanced (version detection)",
         )
+        # Added this to allow the views.py to force unprivileged mode
+        parser.add_argument(
+            "--unprivileged",
+            action="store_true",
+            help="Run nmap in unprivileged mode (required for cloud environments like Render)",
+        )
 
     def handle(self, *args, **options):
         scan_type = options["type"]
-        target = "192.168.1.0/24"
+        is_unprivileged = options["unprivileged"]
+        # IMPORTANT: When running in the cloud, do not scan 192.168.x.x
+        # You should ideally pass the target as an argument or use a public test target
+        target = "scanme.nmap.org"
 
         nmap_flags = ["-F", "-T4"]
         if scan_type == "advanced":
             nmap_flags.append("-sV")
+
+        # Add the cloud-required flag
+        if is_unprivileged:
+            nmap_flags.append("--unprivileged")
 
         self.stdout.write(
             self.style.NOTICE(f"--- Starting {scan_type.upper()} Scan on {target} ---")
@@ -63,15 +76,11 @@ class Command(BaseCommand):
             for line in iter(process.stdout.readline, ""):
                 clean_line = line.strip()
                 if clean_line:
+                    # Ignore PCRE2 warnings if they appear
                     if "PCRE2 error" in clean_line:
                         continue
-
                     self.stdout.write(f"[LOG] {clean_line}")
                     self.stdout.flush()
-
-                    if "Stats:" in clean_line:
-                        self.stdout.write(self.style.WARNING(f"PROGRESS: {clean_line}"))
-                        self.stdout.flush()
 
             process.stdout.close()
             return_code = process.wait()
@@ -82,25 +91,18 @@ class Command(BaseCommand):
 
                 if full_xml:
                     ingestion_success = self.parse_and_save(full_xml, scan_record)
-
                     if ingestion_success:
                         scan_record.status = Scan.StatusChoices.COMPLETED
                         scan_record.completed_at = timezone.now()
                         scan_record.save()
-                        self.stdout.write(
-                            self.style.SUCCESS(
-                                f"Successfully ingested {scan_type} results."
-                            )
-                        )
                     else:
                         scan_record.status = Scan.StatusChoices.FAILED
                         scan_record.save()
-                        self.stderr.write(
-                            self.style.ERROR(
-                                "Data ingestion failed due to XML encoding errors."
-                            )
-                        )
             else:
+                # Log the specific Nmap failure for cloud debugging
+                self.stderr.write(
+                    self.style.ERROR(f"Nmap exited with code {return_code}")
+                )
                 raise subprocess.CalledProcessError(return_code, cmd)
 
         except Exception as e:

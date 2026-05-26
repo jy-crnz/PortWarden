@@ -232,7 +232,15 @@ def stream_scan(request):
         yield f"data: [INIT] Initializing {scan_type.upper()} scan...\n\n".encode(
             "utf-8"
         )
-        cmd = [sys.executable, "-u", "manage.py", "run_scan", "--type", scan_type]
+        cmd = [
+            sys.executable,
+            "-u",
+            "manage.py",
+            "run_scan",
+            "--type",
+            scan_type,
+            "--unprivileged",
+        ]
 
         process = subprocess.Popen(
             cmd,
