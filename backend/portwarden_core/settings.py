@@ -24,8 +24,7 @@ DEBUG = os.environ.get("DEBUG", "True") == "True"
 # Allows Render to assign a public URL
 ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
 
-# Allows the Next.js frontend to talk to the backend without being blocked
-CORS_ALLOW_ALL_ORIGINS = True
+
 
 # Application definition
 INSTALLED_APPS = [
@@ -108,10 +107,10 @@ USE_TZ = True
 STATIC_URL = "static/"
 
 # API & Security Configuration
-# (We leave this here for local dev, though CORS_ALLOW_ALL_ORIGINS currently overrides it)
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
+    "https://your-actual-vercel-url.vercel.app",  # <--- ADD THIS HERE
 ]
 
 # OpenRouter API Key securely loaded from .env
