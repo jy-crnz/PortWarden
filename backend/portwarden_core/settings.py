@@ -110,7 +110,7 @@ STATIC_URL = "static/"
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
-    "https://your-actual-vercel-url.vercel.app",  # <--- ADD THIS HERE
+    "https://port-warden.vercel.app",  # <--- ADD THIS HERE
 ]
 
 # OpenRouter API Key securely loaded from .env
