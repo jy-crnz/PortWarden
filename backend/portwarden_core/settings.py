@@ -5,6 +5,7 @@ Django settings for portwarden_core project.
 import os
 from pathlib import Path
 from dotenv import load_dotenv
+import dj_database_url
 
 # Build paths inside the project
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -16,8 +17,15 @@ load_dotenv(os.path.join(BASE_DIR, ".env"))
 SECRET_KEY = os.environ.get(
     "SECRET_KEY", "django-insecure-m3@@tdql5iut6c^lay!@x+hjr*vy4e#dn8+d+213e#y4tqr0-6"
 )
-DEBUG = True
-ALLOWED_HOSTS = []
+
+# DEBUG will be False in production (Render), True locally
+DEBUG = os.environ.get("DEBUG", "True") == "True"
+
+# Allows Render to assign a public URL
+ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
+
+# Allows the Next.js frontend to talk to the backend without being blocked
+CORS_ALLOW_ALL_ORIGINS = True
 
 # Application definition
 INSTALLED_APPS = [
@@ -64,13 +72,21 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "portwarden_core.wsgi.application"
 
-# Database
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+
+# Database Configuration
+# Uses PostgreSQL in production (if DATABASE_URL is found), falls back to SQLite locally
+DATABASE_URL = os.environ.get("DATABASE_URL")
+
+if DATABASE_URL:
+    DATABASES = {"default": dj_database_url.parse(DATABASE_URL, conn_max_age=600)}
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
+        }
     }
-}
+
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
@@ -92,6 +108,7 @@ USE_TZ = True
 STATIC_URL = "static/"
 
 # API & Security Configuration
+# (We leave this here for local dev, though CORS_ALLOW_ALL_ORIGINS currently overrides it)
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
