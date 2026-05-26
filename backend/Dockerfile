@@ -26,6 +26,6 @@ COPY . /app/
 # 7. Expose the port Django will run on
 EXPOSE 8000
 
-# 8. Start the production server (Gunicorn)
-# NOTE: Replace 'core.wsgi:application' with your actual project folder name if it's different.
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "3", "--timeout", "120", "portwarden_core.wsgi:application"]
+# 8. Run migrations and then start the production server
+# This ensures the database is always up to date before the app boots
+CMD sh -c "python manage.py migrate && gunicorn --bind 0.0.0.0:8000 --workers 3 --timeout 120 portwarden_core.wsgi:application"
